@@ -26,6 +26,7 @@ import keras
 from keras.models import Sequential
 #from keras.models import EfficientNet
 #https://keras.io/api/applications/efficientnet/
+#A potential model to use
 from keras.layers import Dense, Conv2D, MaxPooling2D, Dropout, Flatten
 from keras.wrappers.scikit_learn import KerasClassifier
 
