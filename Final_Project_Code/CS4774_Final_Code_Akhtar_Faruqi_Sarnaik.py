@@ -9,4 +9,4 @@
 #test 1
 #this was added in Ramiz's branch
 
-#Kunaal Path: 'home
+#Kunaal Path: '/c/Users/Kunaal/Documents/Fall 2020/CS 4774/PROJECT_DATA/skin-lesions'
