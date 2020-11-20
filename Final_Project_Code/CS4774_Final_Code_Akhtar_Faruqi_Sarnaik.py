@@ -34,7 +34,19 @@ imWidth = ... #image width in pixels
 
 #Method to obtain the data from the given path (see above for global paths)
 def get_data(...):
+    # Normalize image pixels from zero to 1
+    # Remove mean and divide it by variance (NORMALIZATION)
+        # Functions in tensorflow that will help do it automatically
+    # Convert jpeg images to tensor or numpy input
+    # Data Loader for mini-batches: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
+        # Can use any model with it
+    # Can use data augmentation to improve accuracy (Rotation, Translation, etc. in tensorflow)
+    # Don't have to resize images
+        # If using MLP, will vectorize images
+        # For CNN, same thing (input channel 3 for RGB)
+            # KNN/linear Regression in final layer
 
+        
     return xData, yData
 
 #Method to create the CNN Model
@@ -52,6 +64,14 @@ def train_and_select_model(...):
 
     return best_model, best_history
 
+#Method to evaluate the model based on the train
+def model_evaluation(...):
+    
+    return ...
+
 #MAIN METHOD
 if __name__ == '__main__':
+    # Loss per epoch
+    # Training accuracy
+
     
