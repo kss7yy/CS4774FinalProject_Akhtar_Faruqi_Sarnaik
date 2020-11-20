@@ -1,33 +1,29 @@
-# Class: CS 4774: Machine Learning Final Project
-# Title: Melanoma Classification
-# Team Member 1: Ramiz Akhtar (rsa5wj)
-# Team Member 2: Rayaan Faruqi (raf9dz)
-# Team Member 3: Kunaal Sarnaik (kss7yy)
-# Professor: Yanjun Qi
-# Due Date: December 6th, 2020
+'''
+Class: CS 4774: Machine Learning Final Project
+Title: Melanoma Classification
+Team Member 1: Ramiz Akhtar (rsa5wj)
+Team Member 2: Rayaan Faruqi (raf9dz)
+Team Member 3: Kunaal Sarnaik (kss7yy)
+Professor: Yanjun Qi
+Due Date: December 6th, 2020
+'''
+#Guide: https://medium.com/ai-in-plain-english/image-processing-and-classification-with-python-and-keras-c368769bde26
 
 
 #Standard python imports
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+import sys
 
 # SKLearn 
 from sklearn.utils import shuffle
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 
-import os
-import sys
-import pandas as pd
-
-
 # Keras Models
 import keras
 from keras.models import Sequential
-#from keras.models import EfficientNet
-    #https://keras.io/api/applications/efficientnet/
-from keras.layers import Dense, Conv2D, MaxPooling2D, Dropout, Flatten
-from keras.wrappers.scikit_learn import KerasClassifier
 
 # Keras Image Pre-Processing
     # https://machinelearningmastery.com/how-to-load-convert-and-save-images-with-the-keras-api/
@@ -35,31 +31,25 @@ from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 from keras.preprocessing.image import array_to_img
 
+#from keras.models import EfficientNet
+    #https://keras.io/api/applications/efficientnet/
+from keras.layers import Dense, Conv2D, MaxPooling2D, Dropout, Flatten
+from keras.wrappers.scikit_learn import KerasClassifier
+
+
 #https://medium.com/@ageitgey/python-3-quick-tip-the-easy-way-to-deal-with-file-paths-on-windows-mac-and-linux-11a072b58d5f
 from pathlib import Path
 
 #Method to obtain the data from the given path (see above for global paths)
 def get_data(path_name):
-    # Normalize image pixels from zero to 1
-    # Remove mean and divide it by variance (NORMALIZATION)
-        # Functions in tensorflow that will help do it automatically
-    # Convert jpeg images to tensor or numpy input
-    # Data Loader for mini-batches: https://www.tensorflow.org/api_docs/python/tf/keras/utils/Sequence
-        # Can use any model with it
-    # Can use data augmentation to improve accuracy (Rotation, Translation, etc. in tensorflow)
-    # Don't have to resize images
-        # If using MLP, will vectorize images
-        # For CNN, same thing (input channel 3 for RGB)
-            # KNN/linear Regression in final layer
     
     #Kunaal Path: "../PROJECT_DATA/skin-lesions"
-    #Rayaan Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject"
+    #Rayaan Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions"
     #Ramiz Path: ""
 
-    PATH = Path("../PROJECT_DATA/skin-lesions")
-    #PATH = os.path.abspath("..\PROJECT_DATA\skin-lesions")
+    PATH = Path("/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions")
     
-    #join the path and the specific directory (train/valid/test)we're looking at
+    #join the path and the specific directory (train/valid/test) we're looking at
     split_path = os.path.join(PATH, path_name) 
     
     #Make relevant paths for the nevus, melanoma, and sbrk sub-directories in the current path
@@ -71,10 +61,6 @@ def get_data(path_name):
     nevus_arr = loadImages(nevus_path)
     # melanoma_arr = loadImages(melanoma_path)
     # sb_arr = loadImages(sbrk_path)
-    
-    '''
-    INSERT PREPROCESSING/DATA AUGMENTATION
-    '''
     
     #set up classification matrices
     nevus_y = [0]*len(nevus_arr)
@@ -94,18 +80,18 @@ def get_data(path_name):
 # Method to loadImages in the given path (PRE-PROCESSES images as well!)
 def loadImages(path):
     retArr = []
+    path = Path("/Volumes/Rayaan_Ext2TB/MachineLearningProject/testing_code")
     print("Path is: ", path)
     for i in os.listdir(path):
         #Load each image in path
-        print("File is: ", i)
+        print("image is: ", i)
         img = load_img(os.path.join(path, i))
-        img_arr = img_to_array(img)
-
-        #Pre-processing
-
-        
+        img_arr = img_to_array(img)        
         retArr.append(img_arr)
     retArr = np.asarray(retArr)
+    print("------------------------------------------------------")
+    print(retArr[0])
+    print(retArr[11])
     return retArr
 
 '''
@@ -149,6 +135,3 @@ if __name__ == '__main__':
 
     nevus = get_data(train_path)
     print(nevus)
-    
-
-    
