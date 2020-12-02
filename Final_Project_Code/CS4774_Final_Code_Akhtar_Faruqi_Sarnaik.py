@@ -30,9 +30,11 @@ from keras.models import Sequential
 
 # Keras Image Pre-Processing
     # https://machinelearningmastery.com/how-to-load-convert-and-save-images-with-the-keras-api/
-from keras.preprocessing.image import load_img
-from keras.preprocessing.image import img_to_array
-from keras.preprocessing.image import array_to_img
+    #https://machinelearningmastery.com/how-to-configure-image-data-augmentation-when-training-deep-learning-neural-networks/
+#from keras.preprocessing.image import load_img
+#from keras.preprocessing.image import img_to_array
+#from keras.preprocessing.image import array_to_img
+import keras.preprocessing.image
 
 #from keras.models import EfficientNet
     #https://keras.io/api/applications/efficientnet/
@@ -49,23 +51,67 @@ from PIL import Image #for converting images to grayscale, resizing image, trimm
 #OpenCV Library 
 import cv2
 
+from statistics import median, mean
+
 #from google.colab.patches import csv2_imshow
 random.seed(42)
 
 
+
+#Global Variables
+#Kunaal Path: "../PROJECT_DATA/skin-lesions"
+#Rayaan Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions"
+#Ramiz Path: ""    
+
+#Kunaal Test Path: "../PROJECT_DATA/skin-lesions-trunc/skin-lesions-trunc"
+#Rayaan Test Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions-trunc"
+#Ramiz Test Path: ""
+
+PATH = Path("../PROJECT_DATA/skin-lesions-trunc/skin-lesions-trunc")
+IMG_WIDTH = 256
+IMG_HEIGHT = 256
+#maybe use the median size in the dataset???
+
+def keras_augmentation():
+    #https://machinelearningmastery.com/how-to-configure-image-data-augmentation-when-training-deep-learning-neural-networks/
+    datagen = ImageDataGenerator()
+    x, y = ... 
+    it = datagen.flow(x, y)
+
+
+#Function to get average image size (x pixels vs y pixels) for all images in the set (RUN ONLY ONCE)
+def get_average_image_size():
+    widths = []
+    heights = []
+    img_count = 0
+
+    size_arr = []
+
+
+    split_path_list = [os.path.join(PATH, "train"), os.path.join(PATH, "valid"), os.path.join(PATH, "test")]
+    n_mel_sbrk_path_list = ["nevus", "melanoma", "seborrheic_keratosis"]
+    
+    for split_path in split_path_list:
+        for n_mel_sbrk_path in n_mel_sbrk_path_list:
+            path = os.path.join(split_path, n_mel_sbrk_path)
+            for i in os.listdir(path):
+                image_path = os.path.join(path, i)
+                image = load_img(image_path, grayscale = True)
+                
+                img_size = image.size
+                widths.append(img_size[0])
+                heights.append(img_size[1])
+                img_count += 1
+                                
+    #get median 
+    med_width = int(median(widths) / 8)
+    med_height = int(median(heights) / 8)
+    
+    return med_width, med_height, img_count
+
 #Method to obtain the data from the given path (see above for global paths)
 def get_data(path_name):
-    
-    #Kunaal Path: "../PROJECT_DATA/skin-lesions"
-    #Rayaan Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions"
-    #Ramiz Path: ""    
-
-    #Kunaal Test Path: "../PROJECT_DATA/skin-lesions-trunc/skin-lesions-trunc"
-    #Rayaan Test Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions-trunc"
-    #Ramiz Test Path: ""
-
-    PATH = Path("../PROJECT_DATA/skin-lesions-trunc/skin-lesions-trunc")
-    
+        
     #join the path and the specific directory (train/valid/test) we're looking at
     split_path = os.path.join(PATH, path_name) 
     
@@ -100,8 +146,6 @@ def get_data(path_name):
 def loadImages(path):
     retArr = []
     print("Path is: ", path)
-    width = 256
-    height = 256
     for i in os.listdir(path):
         #Load each image in path
         path_i = os.path.join(path, i)
@@ -109,18 +153,30 @@ def loadImages(path):
 
         #Resizing images to 256 x 256
         #https://www.tutorialkart.com/opencv/python/opencv-python-resize-image/
-        img_resized = cv2.resize(img, (width, height))
+        img_resized = cv2.resize(img, (IMG_WIDTH, IMG_HEIGHT))
 
         #normalize image pixels from 0 to 1
         #https://stackoverflow.com/posts/39037135/edit    
         norm_image = cv2.normalize(img_resized, None, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-             
+        
         #data augmentation (rotation)
         #https://www.pyimagesearch.com/2017/01/02/rotate-images-correctly-with-opencv-and-python/
         #Rotating in 360 over a continuous range versus in increments of 90???
         angle = random.randint(1,4)*90
         # print(angle)
         rotate_img = imutils.rotate(norm_image, angle)
+
+        #FOR KERAS
+        '''
+        try using Keras deep learning data augmentation libraries 
+        https://keras.io/api/preprocessing/image/
+        https://towardsdatascience.com/data-augmentation-in-medical-images-95c774e6eaae 
+
+        Consider upsampling and downsampling by finding median image size in the dataset
+
+        AWS free credits
+        Use Rivanna with SLURM scripts and python files
+        '''
 
         # cv2.imshow("Rotatated and resized image", rotated_img) #replace dot with underscore for collab
 
@@ -132,47 +188,75 @@ def loadImages(path):
 
 '''
 #Method to create the CNN Model
-def create_cnn(x, y, x_val, y_val, args=None):
-    #create base CNN model
+def create_cnn(x_train, y_train, x_val, y_val, args=None):
+    #create base CNN model --- technically only an NN model until we add Conv2D Layers
+    
+    #If no arguments are passed in, set to default values
+    if (args == None):
+        args['batch_size'] = 3
+        args['epochs'] = 3
+
+    ###DEFINE MODEL ARCHITECTURE------------ (UNet)
     model = Sequential()
     #hidden layer
     #can try activation as 'relu', 'softmax', 'sigmoid', 'tanh' 
-    model.add(Dense(100), input_shape=(dim1,dim2), activation='relu')
+    model.add(Dense(100), input_shape=(IMG_WIDTH, IMG_HEIGHT), activation='relu')
     
     #output layer
     model.add(Dense(10), activation='softmax')
 
     #look at model summary
-    model
+    model.summary()
 
     #compiling sequential model
-    model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer='adam')
+    #can try optimizer as 'adam', 'sgd', 'adadelta', 'adagrad', 'nadam', 'adamax', and more
+    model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer='adam')          #Review what is the best loss function for this
 
-    #train model for 3 epochs
-    model.fit(x, y, batch_size=6, epochs=3, validation_data=(x_val, y_val))
-
-    return model
-
-#Method to train the CNN Model
-def train_cnn(...):
+    #train model for given epochs with given batch_size
+    history = model.fit(x_train, y_train, batch_size=a,gs['batch_size'], epochs=args['epochs'] validation_data=(x_val, y_val))
 
     return model, history
-
+'''
+#Method to train the CNN Model
+def train_cnn(x_train, y_train, x_validation, y_validation, args=None):
+    model = create_cnn(args)
+    history = model.fit(x_train, y_train, batch_size=args['batch_size'], epochs=args['num_epochs'], validation_data=(x_validation, y_validation))
+    return model, history
+'''
 #Method to train and select the CNN Model given the parameters specified.
-def train_and_select_model(...):
+def train_and_select_model(x_train, y_train, x_validation, y_validation):
     args = {
-        'batch_size': ...,
-        'num_epochs': ..., 
+        'batch_size': 4,
+        'num_epochs': 5, 
     }
 
     best_valid_acc = 0
-    best_hyper_set = 0
+    best_hyper_set = {}
+
 
     for learning_rate in [0.0001, 0.0005, 0.001, 0.005, 0.01]:
-        for opt in ['adam', 'sgd']:
+        for opt in ['adam', 'sgd', 'adagrad', 'nadam', 'adamax']:
             for activation_func in ['softmax', 'relu', 'sigmoid', 'tanh']:
-                #model = create_cnn
+                args['learning_rate'] = learning_rate
+                args['opt'] = opt
+                args['activation_func'] = activation_func
 
+                print("Creating and training model with learning rate ", learning_rate,
+                 ", optimizer, " opt, ", activation function, ", activation_func)
+
+                #model, history = train_cnn(x_train, y_train, x_validation, y_validation, args)
+                model, history = create_cnn(x_train, y_train, x_validation, y_validation, args)
+
+                validation_accuracy = history.history['val_accuracy']
+
+                max_validation_accuracy = max(validation_accuracy)
+                if max_validation_accuracy > best_valid_acc:
+                    best_model = model
+                    best_valid_acc = max_validation_accuracy
+                    best_hyper_set['learning_rate'] = learning_rate
+                    best_hyper_set['opt']  = opt
+                    best_hyper_set['activation_function'] = activation_func
+        
     return best_model, best_history, best_valid_acc, best_hyper_set
 
 #Method to evaluate the model based on the train
@@ -187,12 +271,19 @@ def plot_history(...):
 
 #MAIN METHOD
 if __name__ == '__main__':
+    x_size, y_size, num_images = get_average_image_size()
+    print("------------------Median Image Size-----------------------")
+    print(x_size)
+    print(y_size)
+    print("Image Count: ", num_images)
+
 
     train_path = "train"
     valid_path = "valid"
     test_path = "test"
     
-    x_train, y_train = get_data(train_path)
+    #x_train, y_train = get_data(train_path)
     # x_valid, y_valid = get_data(valid_path)
     # x_test, y_test = get_data(test_path)
     
+    #b_model, b_history, b_valid_acc, b_hyper_set = train_and_select_model(x_train, y_train, x_valid, y_valid)
