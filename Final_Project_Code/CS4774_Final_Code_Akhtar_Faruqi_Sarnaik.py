@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import os
 import sys
 import random
-import imutils
+#import imutils
 
 # SKLearn 
 from sklearn.utils import shuffle
@@ -31,10 +31,7 @@ from keras.models import Sequential
 # Keras Image Pre-Processing
     # https://machinelearningmastery.com/how-to-load-convert-and-save-images-with-the-keras-api/
     #https://machinelearningmastery.com/how-to-configure-image-data-augmentation-when-training-deep-learning-neural-networks/
-#from keras.preprocessing.image import load_img
-#from keras.preprocessing.image import img_to_array
-#from keras.preprocessing.image import array_to_img
-import keras.preprocessing.image
+from keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
 
 #from keras.models import EfficientNet
     #https://keras.io/api/applications/efficientnet/
@@ -57,7 +54,6 @@ from statistics import median, mean
 random.seed(42)
 
 
-
 #Global Variables
 #Kunaal Path: "../PROJECT_DATA/skin-lesions"
 #Rayaan Path: "/Volumes/Rayaan_Ext2TB/MachineLearningProject/skin-lesions"
@@ -68,16 +64,12 @@ random.seed(42)
 #Ramiz Test Path: ""
 
 PATH = Path("../PROJECT_DATA/skin-lesions-trunc/skin-lesions-trunc")
-IMG_WIDTH = 256
-IMG_HEIGHT = 256
+
+dim = 128
+
+IMG_WIDTH = dim
+IMG_HEIGHT = dim
 #maybe use the median size in the dataset???
-
-def keras_augmentation():
-    #https://machinelearningmastery.com/how-to-configure-image-data-augmentation-when-training-deep-learning-neural-networks/
-    datagen = ImageDataGenerator()
-    x, y = ... 
-    it = datagen.flow(x, y)
-
 
 #Function to get average image size (x pixels vs y pixels) for all images in the set (RUN ONLY ONCE)
 def get_average_image_size():
@@ -137,7 +129,6 @@ def get_data(path_name):
 
     #shuffle the coupled data
     xData, yData = shuffle(x, y)
-
     #Return statement
     return xData, yData
 
@@ -162,9 +153,10 @@ def loadImages(path):
         #data augmentation (rotation)
         #https://www.pyimagesearch.com/2017/01/02/rotate-images-correctly-with-opencv-and-python/
         #Rotating in 360 over a continuous range versus in increments of 90???
-        angle = random.randint(1,4)*90
+        # angle = random.randint(1,4)*90
         # print(angle)
-        rotate_img = imutils.rotate(norm_image, angle)
+        # rotate_img = imutils.rotate(norm_image, angle)
+
 
         #FOR KERAS
         '''
@@ -180,54 +172,87 @@ def loadImages(path):
 
         # cv2.imshow("Rotatated and resized image", rotated_img) #replace dot with underscore for collab
 
-        rotate_img = np.asarray(rotate_img)
-        retArr.append(rotate_img)
+        rotate_img = np.asarray(norm_image)
+        retArr.append(norm_image)
     retArr = np.asarray(retArr)
     print(retArr[0])
     return retArr
 
-'''
+
 #Method to create the CNN Model
-def create_cnn(x_train, y_train, x_val, y_val, args=None):
+def create_and_train_cnn(x_train, y_train, x_val, y_val, args=None):
     #create base CNN model --- technically only an NN model until we add Conv2D Layers
+
+    print("DATA SIZES BEFORE------------")
+    print(np.shape(x_train))
+    print(np.shape(y_train))
+
+    print(np.shape(x_val))
+    print(np.shape(y_val))
+
+
+    x_train = x_train.reshape(len(x_train), dim, dim, 3)
+    x_val = x_val.reshape(len(x_val), dim, dim, 3)
+
+    y_train = keras.utils.to_categorical(y_train, num_classes=3)
+    y_val = keras.utils.to_categorical(y_val, num_classes=3)
+
+    # y_train = y_train.reshape(len(x_train), 1)
+    # y_val = y_val.reshape(len(x_val), 1)
     
+    input_shape = (dim, dim, 3)
+
+
+    print("DATA SIZES AFTER------------")
+    print(np.shape(x_train))
+    print(np.shape(y_train))
+
+    print(np.shape(x_val))
+    print(np.shape(y_val))
+
     #If no arguments are passed in, set to default values
     if (args == None):
+        args = {}
         args['batch_size'] = 3
-        args['epochs'] = 3
+        args['epochs'] = 15
+        args['opt'] = 'adam'
 
-    ###DEFINE MODEL ARCHITECTURE------------ (UNet)
+    ###DEFINE MODEL ARCHITECTURE
     model = Sequential()
-    #hidden layer
+
     #can try activation as 'relu', 'softmax', 'sigmoid', 'tanh' 
-    model.add(Dense(100), input_shape=(IMG_WIDTH, IMG_HEIGHT), activation='relu')
+    model.add(Conv2D(filters=dim, activation='relu', kernel_size=3, input_shape=input_shape))
+    model.add(MaxPooling2D(pool_size=(18,18), strides=(1,1)))
+    model.add(Flatten())
+    model.add(Dropout(0.2))
+    model.add(Flatten())
+    model.add(Dense(units=3, activation='relu'))
+    #model.add(Dense(100, input_shape=(IMG_WIDTH, IMG_HEIGHT, 3), activation='relu'))
     
     #output layer
-    model.add(Dense(10), activation='softmax')
+    #model.add(Dense(10, activation='softmax'))
 
     #look at model summary
     model.summary()
 
     #compiling sequential model
     #can try optimizer as 'adam', 'sgd', 'adadelta', 'adagrad', 'nadam', 'adamax', and more
-    model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer='adam')          #Review what is the best loss function for this
+    model.compile(loss='categorical_crossentropy', metrics=['accuracy'], optimizer=args['opt'])          #Review what is the best loss function for this
+
+    #create generator and iterator
+    generator = ImageDataGenerator()
+    itr = generator.flow(x_train, y_train)
 
     #train model for given epochs with given batch_size
-    history = model.fit(x_train, y_train, batch_size=a,gs['batch_size'], epochs=args['epochs'] validation_data=(x_val, y_val))
+    history = model.fit(x=itr, batch_size=args['batch_size'], epochs=args['epochs'], validation_data=(x_val, y_val))
 
     return model, history
-'''
-#Method to train the CNN Model
-def train_cnn(x_train, y_train, x_validation, y_validation, args=None):
-    model = create_cnn(args)
-    history = model.fit(x_train, y_train, batch_size=args['batch_size'], epochs=args['num_epochs'], validation_data=(x_validation, y_validation))
-    return model, history
-'''
+    
 #Method to train and select the CNN Model given the parameters specified.
 def train_and_select_model(x_train, y_train, x_validation, y_validation):
     args = {
-        'batch_size': 4,
-        'num_epochs': 5, 
+        'batch_size': 8,
+        'epochs': 8, 
     }
 
     best_valid_acc = 0
@@ -244,14 +269,14 @@ def train_and_select_model(x_train, y_train, x_validation, y_validation):
                 print("Creating and training model with learning rate ", learning_rate,
                  ", optimizer, " opt, ", activation function, ", activation_func)
 
-                #model, history = train_cnn(x_train, y_train, x_validation, y_validation, args)
-                model, history = create_cnn(x_train, y_train, x_validation, y_validation, args)
+                model, history = create_and_train_cnn(x_train, y_train, x_validation, y_validation, args)
 
                 validation_accuracy = history.history['val_accuracy']
 
                 max_validation_accuracy = max(validation_accuracy)
                 if max_validation_accuracy > best_valid_acc:
                     best_model = model
+                    best_history = history
                     best_valid_acc = max_validation_accuracy
                     best_hyper_set['learning_rate'] = learning_rate
                     best_hyper_set['opt']  = opt
@@ -267,23 +292,31 @@ def model_evaluation(...):
 def plot_history(...):
 
     return ...
-'''
+
 
 #MAIN METHOD
 if __name__ == '__main__':
-    x_size, y_size, num_images = get_average_image_size()
-    print("------------------Median Image Size-----------------------")
-    print(x_size)
-    print(y_size)
-    print("Image Count: ", num_images)
+    # x_size, y_size, num_images = get_average_image_size()
+    # print("------------------Median Image Size-----------------------")
+    # print(x_size)
+    # print(y_size)
+    # print("Image Count: ", num_images)
 
 
     train_path = "train"
     valid_path = "valid"
     test_path = "test"
     
-    #x_train, y_train = get_data(train_path)
-    # x_valid, y_valid = get_data(valid_path)
+    x_train, y_train = get_data(train_path)
+    x_valid, y_valid = get_data(valid_path)
     # x_test, y_test = get_data(test_path)
     
-    #b_model, b_history, b_valid_acc, b_hyper_set = train_and_select_model(x_train, y_train, x_valid, y_valid)
+    #test_model, test_history = create_and_train_cnn(x_train, y_train, x_valid, y_valid)
+    b_model, b_history, b_valid_acc, b_hyper_set = train_and_select_model(x_train, y_train, x_valid, y_valid)
+
+    print("\nLet's Go.\n")
+    print("Best model summary: ", b_model.summary())
+    # print("Best history: ", b_history)
+    print("Best validation accuracy: ", b_valid_acc)
+    print("Best Hyper Set: ", b_hyper_set)
+    
