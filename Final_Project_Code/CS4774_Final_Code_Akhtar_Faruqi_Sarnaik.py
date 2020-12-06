@@ -50,6 +50,10 @@ import cv2
 
 from statistics import median, mean
 
+#Data Visualization Imports
+import seaborn as sns
+import plotly.graph_objects as go
+
 #from google.colab.patches import csv2_imshow
 random.seed(42)
 
@@ -65,10 +69,11 @@ random.seed(42)
 
 PATH = Path("../PROJECT_DATA/skin-lesions-trunc/skin-lesions-trunc")
 
-dim = 128
+#Median size of the dataset 376 x 250
+dim = [376, 250] #128
 
-IMG_WIDTH = dim
-IMG_HEIGHT = dim
+IMG_WIDTH = (int)(dim[0] * 8 / 10)
+IMG_HEIGHT = (int)(dim[1] * 8 / 10)
 #maybe use the median size in the dataset???
 
 #Function to get average image size (x pixels vs y pixels) for all images in the set (RUN ONLY ONCE)
@@ -78,7 +83,6 @@ def get_average_image_size():
     img_count = 0
 
     size_arr = []
-
 
     split_path_list = [os.path.join(PATH, "train"), os.path.join(PATH, "valid"), os.path.join(PATH, "test")]
     n_mel_sbrk_path_list = ["nevus", "melanoma", "seborrheic_keratosis"]
@@ -129,6 +133,7 @@ def get_data(path_name):
 
     #shuffle the coupled data
     xData, yData = shuffle(x, y)
+
     #Return statement
     return xData, yData
 
@@ -178,21 +183,20 @@ def loadImages(path):
     print(retArr[0])
     return retArr
 
-
 #Method to create the CNN Model
 def create_and_train_cnn(x_train, y_train, x_val, y_val, args=None):
     #create base CNN model --- technically only an NN model until we add Conv2D Layers
-
+    '''
     print("DATA SIZES BEFORE------------")
     print(np.shape(x_train))
     print(np.shape(y_train))
 
     print(np.shape(x_val))
     print(np.shape(y_val))
+    '''
 
-
-    x_train = x_train.reshape(len(x_train), dim, dim, 3)
-    x_val = x_val.reshape(len(x_val), dim, dim, 3)
+    x_train = x_train.reshape(len(x_train), dim[0], dim[1], 3)
+    x_val = x_val.reshape(len(x_val), dim[0], dim[1], 3)
 
     y_train = keras.utils.to_categorical(y_train, num_classes=3)
     y_val = keras.utils.to_categorical(y_val, num_classes=3)
@@ -200,15 +204,16 @@ def create_and_train_cnn(x_train, y_train, x_val, y_val, args=None):
     # y_train = y_train.reshape(len(x_train), 1)
     # y_val = y_val.reshape(len(x_val), 1)
     
-    input_shape = (dim, dim, 3)
+    input_shape = (dim[0], dim[1], 3)
 
-
+    '''
     print("DATA SIZES AFTER------------")
     print(np.shape(x_train))
     print(np.shape(y_train))
 
     print(np.shape(x_val))
     print(np.shape(y_val))
+    '''
 
     #If no arguments are passed in, set to default values
     if (args == None):
@@ -221,12 +226,12 @@ def create_and_train_cnn(x_train, y_train, x_val, y_val, args=None):
     model = Sequential()
 
     #can try activation as 'relu', 'softmax', 'sigmoid', 'tanh' 
-    model.add(Conv2D(filters=dim, activation='relu', kernel_size=3, input_shape=input_shape))
+    model.add(Conv2D(filters=128, activation=args['activation_function'], kernel_size=3, input_shape=input_shape))
     model.add(MaxPooling2D(pool_size=(18,18), strides=(1,1)))
     model.add(Flatten())
     model.add(Dropout(0.2))
     model.add(Flatten())
-    model.add(Dense(units=3, activation='relu'))
+    model.add(Dense(units=3, activation=args['activation_function']))
     #model.add(Dense(100, input_shape=(IMG_WIDTH, IMG_HEIGHT, 3), activation='relu'))
     
     #output layer
@@ -258,7 +263,6 @@ def train_and_select_model(x_train, y_train, x_validation, y_validation):
     best_valid_acc = 0
     best_hyper_set = {}
 
-
     for learning_rate in [0.0001, 0.0005, 0.001, 0.005, 0.01]:
         for opt in ['adam', 'sgd', 'adagrad', 'nadam', 'adamax']:
             for activation_func in ['softmax', 'relu', 'sigmoid', 'tanh']:
@@ -267,7 +271,7 @@ def train_and_select_model(x_train, y_train, x_validation, y_validation):
                 args['activation_func'] = activation_func
 
                 print("Creating and training model with learning rate ", learning_rate,
-                 ", optimizer, " opt, ", activation function, ", activation_func)
+                 ", optimizer, ", opt, ", activation function, ", activation_func)
 
                 model, history = create_and_train_cnn(x_train, y_train, x_validation, y_validation, args)
 
@@ -285,38 +289,298 @@ def train_and_select_model(x_train, y_train, x_validation, y_validation):
     return best_model, best_history, best_valid_acc, best_hyper_set
 
 #Method to evaluate the model based on the train
-def model_evaluation(...):
+def evaluate_model(predictions, y_test):
+    num_correct = 0
+
+    #Confusion Matrix Set
+    confusion_matrix = np.zeros((3, 3), dtype=int)
+
+    for i in range(len(predictions)):
+        if predictions[i] == y_test[i]:
+            num_correct += 1
+
+        confusion_matrix[predictions[i]][y_test[i]] += 1
+
+    accuracy = (float(num_correct)) / (float(len(predictions)))
+
+    return accuracy, confusion_matrix
+
+def getClassDistribution(ytrain, yvalidation, ytest):
+    nevus_train=0
+    mel_train=0
+    sbrk_train=0
+    nevus_val=0
+    mel_val=0
+    sbrk_val=0
+    nevus_test=0
+    mel_test=0
+    sbrk_test=0
+
+    for i in range(len(ytrain)):
+        if ytrain[i]==0:
+            nevus_train+=1
+        if ytrain[i]==1:
+            mel_train+=1
+        if ytrain[i]==2:
+            sbrk_train+=1
+
+    for i in range(len(yvalidation)):
+        if yvalidation[i]==0:
+            nevus_val+=1
+        if yvalidation[i]==1:
+            mel_val+=1
+        if yvalidation[i]==2:
+            sbrk_val+=1
+
+    for i in range(len(ytest)):
+        if ytest[i]==0:
+            nevus_test+=1
+        if ytest[i]==1:
+            mel_test+=1
+        if ytest[i]==2:
+            sbrk_test+=1    
+
+    nevus_counts=[nevus_train, nevus_val, nevus_test]
+    mel_counts=[mel_train, mel_val, mel_test]
+    sbrk_counts=[sbrk_train, sbrk_val, sbrk_test]
+
+    print("Nevus Counts: ", nevus_counts, "Melanoma Counts: ", mel_counts, "Keratosis Counts: ", sbrk_counts)
+    labels = ['Train', 'Validation', 'Split']
+
+    x = np.arange(len(labels))
+    width = 0.20
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width, nevus_counts, width, label = 'Nevus')
+    rects2 = ax.bar(x, mel_counts, width, label = 'Melanoma')
+    rects3 = ax.bar(x + width, sbrk_counts, width, label = 'SBRK')
+
+    ax.set_ylabel('Frequency (Count)')
+    ax.set_title('Distribution of Split Data by Class')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    fig.tight_layout()
+    plt.show()
+
+def plot_history(history):
+    train_loss_history = history.history['loss']
+    validation_loss_history = history.history['val_loss']
     
-    return ...
+    train_acc_history = history.history['accuracy']
+    validation_acc_history = history.history['val_accuracy']
 
-def plot_history(...):
+    plt.plot(train_loss_history, '-ob')
+    plt.plot(validation_loss_history, '-or')
+    plt.xlabel("Epoch (count)")
+    plt.ylabel("Loss")
+    plt.legend(["Training", "Validation"])
+    plt.show()
 
-    return ...
+    plt.plot(train_acc_history, '-ob')
+    plt.plot(validation_acc_history, '-or')
+    plt.xlabel("Epoch (count)")
+    plt.ylabel("Accuracy (%)")
+    plt.legend(["Training", "validation"])
+    plt.show()
+    
+def plot_confusion(confusion_matrix):
+    confusion_labels = ['NEV', 'MEL', 'SBRK']
 
+    sns.set()
+    fig, ax = plt.subplots()
+    ax = sns.heatmap(confusion_matrix, annot=True, square=True, ax=ax, annot_kws={"fontsize":20}, 
+    linecolor="black", linewidth=0.1, xticklabels=confusion_labels, yticklabels=confusion_labels, cmap="rocket", cbar_kws={'label':'Count'})
+    
+    plt.setp(ax.get_xticklabels(), fontsize=16, va='center', ha='center')
+    plt.setp(ax.get_yticklabels(), fontsize=16, va='center', ha='center')
+    
+    plt.ylabel('Predicted', fontsize=18)
+    plt.xlabel('Actual', fontsize=18)
+
+    ax.set_title("Confusion Matrix", fontsize=24)
+    fig.tight_layout()
+    plt.show()
+
+def getNevusAnalysis(confusion_matrix):
+    nevus_TP = float(confusion_matrix[0][0])
+    nevus_TN = float(confusion_matrix[1][1]+confusion_matrix[1][2]+confusion_matrix[2][1]+confusion_matrix[2][2])
+
+    nevus_FP = float(confusion_matrix[0][1]+confusion_matrix[0][2])
+    nevus_FN = float(confusion_matrix[1][0]+confusion_matrix[2][0])
+
+    nevus_accuracy = ((nevus_TP+nevus_TN) / (nevus_TP+nevus_TN+nevus_FP+nevus_FN))
+    nevus_precision = (nevus_TP) / (nevus_TP + nevus_FP)
+    nevus_recall = (nevus_TP) / (nevus_TP+nevus_FN)
+    nevus_specificity = 1 - ((nevus_FP) / (nevus_FP+nevus_TN))
+
+    nevus_effone = (((2)*(nevus_recall)*(nevus_precision)) / (nevus_recall + nevus_precision))
+
+    return [nevus_accuracy, nevus_precision, nevus_recall, nevus_specificity, nevus_effone]
+
+def getMelanomaAnalysis(confusion_matrix):
+    mel_TP = float(confusion_matrix[1][1])
+    mel_TN = float(confusion_matrix[0][0]+confusion_matrix[0][2]+confusion_matrix[2][0]+confusion_matrix[2][2])
+
+    mel_FP = float(confusion_matrix[1][0]+confusion_matrix[1][2])
+    mel_FN = float(confusion_matrix[0][1]+confusion_matrix[2][1])
+
+    mel_accuracy = ((mel_TP+mel_TN) / (mel_TP+mel_TN+mel_FP+mel_FN))
+    mel_precision = (mel_TP) / (mel_TP + mel_FP)
+    mel_recall = (mel_TP) / (mel_TP+mel_FN)
+    mel_specificity = 1 - ((mel_FP) / (mel_FP+mel_TN))
+
+    mel_effone = (((2)*(mel_recall)*(mel_precision)) / (mel_recall + mel_precision))
+
+    return [mel_accuracy, mel_precision, mel_recall, mel_specificity, mel_effone]
+
+def getSBRKAnalysis(confusion_matrix):
+    sbrk_TP = float(confusion_matrix[2][2])
+    sbrk_TN = float(confusion_matrix[0][0]+confusion_matrix[0][1]+confusion_matrix[1][0]+confusion_matrix[1][1])
+
+    sbrk_FP = float(confusion_matrix[2][0]+confusion_matrix[2][1])
+    sbrk_FN = float(confusion_matrix[0][2]+confusion_matrix[1][2])
+
+    sbrk_accuracy = ((sbrk_TP+sbrk_TN) / (sbrk_TP+sbrk_TN+sbrk_FP+sbrk_FN))
+    sbrk_precision = (sbrk_TP) / (sbrk_TP + sbrk_FP)
+    sbrk_recall = (sbrk_TP) / (sbrk_TP+sbrk_FN)
+    sbrk_specificity = 1 - ((sbrk_FP) / (sbrk_FP+sbrk_TN))
+
+    sbrk_effone = (((2)*(sbrk_recall)*(sbrk_precision)) / (sbrk_recall + sbrk_precision))
+
+    return [sbrk_accuracy, sbrk_precision, sbrk_recall, sbrk_specificity, sbrk_effone]
+
+def tableResults(nevus_statline, melanoma_statline, sbrk_statline):
+    # fig = go.Figure(data=[go.Table(
+    #     header = dict(
+    #         values = ['<b>CLASS</b>', '<b>ACCURACY</b>', '<b>PRECISION</b>', '<b>RECALL (sensitivity)</b>', '<b>SPECIFICITY</b>', '<b>F1-Score</b>'],
+    #         line_color='black', 
+    #         fill_color = 'darkcyan',
+    #         align = 'center',
+    #         font=dict(color='black', size=14)
+    #     ),
+    #     cells = dict(
+    #         values=[
+    #             ['Nevus', 'Melanoma', 'Seborrheic Keratosis'],
+    #             [nevus_statline[0], melanoma_statline[0], sbrk_statline[0]],
+    #             [nevus_statline[1], melanoma_statline[1], sbrk_statline[1]],
+    #             [nevus_statline[2], melanoma_statline[2], sbrk_statline[2]],
+    #             [nevus_statline[3], melanoma_statline[3], sbrk_statline[3]],
+    #             [nevus_statline[4], melanoma_statline[4], sbrk_statline[4]]
+    #         ],
+    #         line_color = 'black',
+    #         fill_color = [['cyan', 'lightcyan', 'cyan']],
+    #         align = 'center',
+    #         font=dict(color='black', size=12)
+    #     )
+    # )])
+
+    # fig.show()
+    cellColor='lightskyblue'
+    headerColor='deepskyblue'
+    for i in range(len(nevus_statline)):
+        nevus_statline[i] = round(nevus_statline[i], 2)
+        melanoma_statline[i] = round(melanoma_statline[i], 2)
+        sbrk_statline[i] = round(sbrk_statline[i], 2)
+        
+    theTable = plt.table(
+        cellText=[
+            nevus_statline,
+            melanoma_statline,
+            sbrk_statline
+        ],
+        cellColours=[
+            [cellColor, cellColor, cellColor, cellColor, cellColor], 
+            [cellColor, cellColor, cellColor, cellColor, cellColor], 
+            [cellColor, cellColor, cellColor, cellColor, cellColor]
+        ],
+        cellLoc='center',
+        rowLabels=['NEV', 'MEL', 'SBRK'],
+        rowColours=[headerColor, headerColor, headerColor], 
+        rowLoc='center',
+        colLabels=['ACCURACY', 'PRECISION', 'RECALL', 'SPECIFICITY', 'F1-Score'],
+        colColours=[headerColor, headerColor, headerColor, headerColor, headerColor],
+        colLoc='center',
+        loc='center'
+    )
+    theTable.auto_set_font_size(False)
+    theTable.set_fontsize(16)
+    theTable.scale(0.8, 1.5)
+    ax=plt.gca()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+    plt.box(on=None)
+    plt.show()
 
 #MAIN METHOD
 if __name__ == '__main__':
-    # x_size, y_size, num_images = get_average_image_size()
-    # print("------------------Median Image Size-----------------------")
-    # print(x_size)
-    # print(y_size)
-    # print("Image Count: ", num_images)
-
+    '''
+    x_size, y_size, num_images = get_average_image_size()
+    print("------------------Median Image Size-----------------------")
+    print(x_size)
+    print(y_size)
+    print("Image Count: ", num_images)
+    '''
 
     train_path = "train"
     valid_path = "valid"
     test_path = "test"
-    
+
     x_train, y_train = get_data(train_path)
     x_valid, y_valid = get_data(valid_path)
-    # x_test, y_test = get_data(test_path)
-    
-    #test_model, test_history = create_and_train_cnn(x_train, y_train, x_valid, y_valid)
+    x_test, y_test = get_data(test_path)
+
+    getClassDistribution(y_train, y_valid, y_test)
+
+    '''
+    runPickle = True
+    picklePath = '/content/gdrive/My Drive/Year 4/ML/CS 4774 Final Project/Final Project Code/objs.npz' #path for pickle to be run
+    if(runPickle):
+        x_train, y_train = get_data(train_path)
+        x_valid, y_valid = get_data(valid_path)
+        x_test, y_test = get_data(test_path)
+
+        with open(picklePath, 'wb') as f:
+          np.savez(f, x_train=x_train, y_train=y_train, x_valid=x_valid, y_valid=y_valid, x_test=x_test, y_test=y_test)
+    else:
+        npzfile = np.load(picklePath)
+
+        x_train = npzfile['x_train']
+        y_train = npzfile['y_train']
+        x_valid = npzfile['x_valid']
+        y_valid = npzfile['y_valid']
+        x_test = npzfile['x_test']
+        y_test = npzfile['y_test']
+    '''
+        
     b_model, b_history, b_valid_acc, b_hyper_set = train_and_select_model(x_train, y_train, x_valid, y_valid)
+    plot_history(b_history)    
 
     print("\nLet's Go.\n")
     print("Best model summary: ", b_model.summary())
     # print("Best history: ", b_history)
     print("Best validation accuracy: ", b_valid_acc)
     print("Best Hyper Set: ", b_hyper_set)
-    
+
+    # #Testing the model
+    y_predictions = b_model.predict(x_test)
+
+    # test_predictions = np.ones(54, dtype=int)
+    # print("Test Predictions BEFORE: \n",test_predictions)
+    # for i in range(len(test_predictions)):
+    #     test_predictions[i] = random.randint(0, 2)*test_predictions[i]
+    # print("Test Predictions AFTER: \n", test_predictions)
+    # print("y_test: ", y_test)
+
+    test_accuracy, conf_matrix = evaluate_model(y_predictions, y_test)
+    print("Testing Accuracy: \n", test_accuracy)
+    print("Confusion Matrix: \n", conf_matrix)
+
+    plot_confusion(conf_matrix)
+
+    nevus_stats = getNevusAnalysis(conf_matrix)
+    mel_stats = getMelanomaAnalysis(conf_matrix)
+    sbrk_stats = getSBRKAnalysis(conf_matrix)
+
+    tableResults(nevus_stats, mel_stats, sbrk_stats)
