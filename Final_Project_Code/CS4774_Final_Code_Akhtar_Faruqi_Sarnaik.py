@@ -34,7 +34,6 @@ from keras.models import Sequential
 from keras.preprocessing.image import load_img, img_to_array, array_to_img, ImageDataGenerator
 
 #from keras.models import EfficientNet
-    #https://keras.io/api/applications/efficientnet/
 from keras.layers import Dense, Conv2D, MaxPooling2D, Dropout, Flatten
 from keras.wrappers.scikit_learn import KerasClassifier
 
