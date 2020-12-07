@@ -13395,7 +13395,7 @@ div#notebook {
             <span class="n">path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">split_path</span><span class="p">,</span> <span class="n">n_mel_sbrk_path</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
                 <span class="n">image_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
-                <span class="n">image</span> <span class="o">=</span> <span class="n">load_img</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">grayscale</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span>
+                <span class="n">image</span> <span class="o">=</span> <span class="n">load_img</span><span class="p">(</span><span class="n">image_path</span><span class="p">,</span> <span class="n">color_mode</span> <span class="o">=</span> <span class="s2">&quot;grayscale&quot;</span><span class="p">)</span>
                 
                 <span class="n">img_size</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span>
                 <span class="n">image_widths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">img_size</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -13405,7 +13405,7 @@ div#notebook {
 <span class="n">med_width</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">median</span><span class="p">(</span><span class="n">image_widths</span><span class="p">)</span> <span class="o">/</span> <span class="mi">15</span><span class="p">)</span>
 <span class="n">med_height</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">median</span><span class="p">(</span><span class="n">image_heights</span><span class="p">)</span> <span class="o">/</span> <span class="mi">15</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Median Image Size (Scaled Down by 15):&quot;</span><span class="p">,</span> <span class="n">med_width</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">med_height</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;image_count&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Total Images:&quot;</span><span class="p">,</span> <span class="n">image_count</span><span class="p">)</span>
 </pre></div>
 
     </div>
@@ -13421,23 +13421,9 @@ div#notebook {
     <div class="prompt"></div>
 
 
-<div class="output_subarea output_stream output_stderr output_text">
-<pre>/usr/local/lib/python3.6/dist-packages/keras_preprocessing/image/utils.py:107: UserWarning:
-
-grayscale is deprecated. Please use color_mode = &#34;grayscale&#34;
-
-</pre>
-</div>
-</div>
-
-<div class="output_area">
-
-    <div class="prompt"></div>
-
-
 <div class="output_subarea output_stream output_stdout output_text">
 <pre>Median Image Size (Scaled Down by 15): 200 x 133
-image_count
+Total Images: 2750
 </pre>
 </div>
 </div>
