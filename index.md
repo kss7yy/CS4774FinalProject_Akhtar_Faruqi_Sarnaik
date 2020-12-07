@@ -1,4 +1,3 @@
-<html>
 <head><meta charset="utf-8" />
 
 <title>Akhtar_Faruqi_Sarnaik_MelanomaClassification_CodePresentation</title>
@@ -15045,8 +15044,3 @@ F-1 Score 0.37499999999999994
     </div>
   </div>
 </body>
-
- 
-
-
-</html>
