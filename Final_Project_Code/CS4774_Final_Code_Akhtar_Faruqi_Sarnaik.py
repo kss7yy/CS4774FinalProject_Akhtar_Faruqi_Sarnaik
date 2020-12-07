@@ -100,8 +100,11 @@ def get_average_image_size():
                 img_count += 1
                                 
     #get median 
-    med_width = int(median(widths) / 8)
-    med_height = int(median(heights) / 8)
+    med_width = int(median(widths))
+    med_height = int(median(heights))
+
+    print(med_width)
+    print(med_height)
     
     return med_width, med_height, img_count
 
@@ -515,72 +518,72 @@ def tableResults(nevus_statline, melanoma_statline, sbrk_statline):
 
 #MAIN METHOD
 if __name__ == '__main__':
-    '''
+    
     x_size, y_size, num_images = get_average_image_size()
     print("------------------Median Image Size-----------------------")
     print(x_size)
     print(y_size)
     print("Image Count: ", num_images)
-    '''
+    
 
-    train_path = "train"
-    valid_path = "valid"
-    test_path = "test"
+    # train_path = "train"
+    # valid_path = "valid"
+    # test_path = "test"
 
-    x_train, y_train = get_data(train_path)
-    x_valid, y_valid = get_data(valid_path)
-    x_test, y_test = get_data(test_path)
+    # x_train, y_train = get_data(train_path)
+    # x_valid, y_valid = get_data(valid_path)
+    # x_test, y_test = get_data(test_path)
 
-    getClassDistribution(y_train, y_valid, y_test)
+    # getClassDistribution(y_train, y_valid, y_test)
 
-    '''
-    runPickle = True
-    picklePath = '/content/gdrive/My Drive/Year 4/ML/CS 4774 Final Project/Final Project Code/objs.npz' #path for pickle to be run
-    if(runPickle):
-        x_train, y_train = get_data(train_path)
-        x_valid, y_valid = get_data(valid_path)
-        x_test, y_test = get_data(test_path)
+    # '''
+    # runPickle = True
+    # picklePath = '/content/gdrive/My Drive/Year 4/ML/CS 4774 Final Project/Final Project Code/objs.npz' #path for pickle to be run
+    # if(runPickle):
+    #     x_train, y_train = get_data(train_path)
+    #     x_valid, y_valid = get_data(valid_path)
+    #     x_test, y_test = get_data(test_path)
 
-        with open(picklePath, 'wb') as f:
-          np.savez(f, x_train=x_train, y_train=y_train, x_valid=x_valid, y_valid=y_valid, x_test=x_test, y_test=y_test)
-    else:
-        npzfile = np.load(picklePath)
+    #     with open(picklePath, 'wb') as f:
+    #       np.savez(f, x_train=x_train, y_train=y_train, x_valid=x_valid, y_valid=y_valid, x_test=x_test, y_test=y_test)
+    # else:
+    #     npzfile = np.load(picklePath)
 
-        x_train = npzfile['x_train']
-        y_train = npzfile['y_train']
-        x_valid = npzfile['x_valid']
-        y_valid = npzfile['y_valid']
-        x_test = npzfile['x_test']
-        y_test = npzfile['y_test']
-    '''
+    #     x_train = npzfile['x_train']
+    #     y_train = npzfile['y_train']
+    #     x_valid = npzfile['x_valid']
+    #     y_valid = npzfile['y_valid']
+    #     x_test = npzfile['x_test']
+    #     y_test = npzfile['y_test']
+    # '''
         
-    b_model, b_history, b_valid_acc, b_hyper_set = train_and_select_model(x_train, y_train, x_valid, y_valid)
-    plot_history(b_history)    
+    # b_model, b_history, b_valid_acc, b_hyper_set = train_and_select_model(x_train, y_train, x_valid, y_valid)
+    # plot_history(b_history)    
 
-    print("\nLet's Go.\n")
-    print("Best model summary: ", b_model.summary())
-    # print("Best history: ", b_history)
-    print("Best validation accuracy: ", b_valid_acc)
-    print("Best Hyper Set: ", b_hyper_set)
+    # print("\nLet's Go.\n")
+    # print("Best model summary: ", b_model.summary())
+    # # print("Best history: ", b_history)
+    # print("Best validation accuracy: ", b_valid_acc)
+    # print("Best Hyper Set: ", b_hyper_set)
 
-    # #Testing the model
-    y_predictions = b_model.predict(x_test)
+    # # #Testing the model
+    # y_predictions = b_model.predict(x_test)
 
-    # test_predictions = np.ones(54, dtype=int)
-    # print("Test Predictions BEFORE: \n",test_predictions)
-    # for i in range(len(test_predictions)):
-    #     test_predictions[i] = random.randint(0, 2)*test_predictions[i]
-    # print("Test Predictions AFTER: \n", test_predictions)
-    # print("y_test: ", y_test)
+    # # test_predictions = np.ones(54, dtype=int)
+    # # print("Test Predictions BEFORE: \n",test_predictions)
+    # # for i in range(len(test_predictions)):
+    # #     test_predictions[i] = random.randint(0, 2)*test_predictions[i]
+    # # print("Test Predictions AFTER: \n", test_predictions)
+    # # print("y_test: ", y_test)
 
-    test_accuracy, conf_matrix = evaluate_model(y_predictions, y_test)
-    print("Testing Accuracy: \n", test_accuracy)
-    print("Confusion Matrix: \n", conf_matrix)
+    # test_accuracy, conf_matrix = evaluate_model(y_predictions, y_test)
+    # print("Testing Accuracy: \n", test_accuracy)
+    # print("Confusion Matrix: \n", conf_matrix)
 
-    plot_confusion(conf_matrix)
+    # plot_confusion(conf_matrix)
 
-    nevus_stats = getNevusAnalysis(conf_matrix)
-    mel_stats = getMelanomaAnalysis(conf_matrix)
-    sbrk_stats = getSBRKAnalysis(conf_matrix)
+    # nevus_stats = getNevusAnalysis(conf_matrix)
+    # mel_stats = getMelanomaAnalysis(conf_matrix)
+    # sbrk_stats = getSBRKAnalysis(conf_matrix)
 
-    tableResults(nevus_stats, mel_stats, sbrk_stats)
+    # tableResults(nevus_stats, mel_stats, sbrk_stats)
